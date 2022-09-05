@@ -1,12 +1,17 @@
+import os
 import unittest
 import fastaPartitionerIndex as fp
 import random
+
+import main
 
 results = []
 class TestPartitionOptions(unittest.TestCase):
     def setUp(self):
         self.path_data_file = './output_data/genes_index.pkl'
         self.functions = fp.FunctionsFastaIndex(self.path_data_file)
+        if not os.path.exists('./input_data/genes.fasta.fai'):
+            main.generate_fasta_index_pyfaidx()
         with open('./input_data/genes.fasta.fai', "r") as f:
             self.data_assert = f.read().splitlines()
 

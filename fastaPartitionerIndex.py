@@ -181,7 +181,7 @@ class FunctionsFastaIndex:
         found = False
         if identifier != '':
             for i, dict in enumerate(self.data):
-                for j, sequence in enumerate(dict['sequences']):
+                for sequence in dict['sequences']:
                     if identifier in sequence:
                         found = True
                         param_seq = sequence.split(' ')
