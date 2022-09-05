@@ -122,7 +122,7 @@ class FastaPartitioner:
                                 results[x]['sequences'][-1] = results[x]['sequences'][-1].replace(
                                     f' {split} ',
                                     f' {split + 1} ')  # num_chunks_has_divided + 1 (i+1: total of current partitions of sequence)
-                        dictio[0] = dictio[0].replace(f' {param[5]}', '')  # Remove 4rt param
+                        dictio[0] = dictio[0].replace(f' {param[5]}', '')  # Remove 6th param
                         dictio[0] = dictio[0].replace(f' {param[3]} ',
                                                       f' {offset_base} ')  # [offset_base_0-offset_base_1|offset_base] -> offset_base
                         dictio[0] = dictio[0].replace(f' {param[4]}', f' {length}')  # [length_0-length_1|length] -> length
