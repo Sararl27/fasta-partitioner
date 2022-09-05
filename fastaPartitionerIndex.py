@@ -162,15 +162,17 @@ class FastaPartitioner:
 
 class FunctionsFastaIndex:
     def __init__(self, path_index_file):
-        with open(path_index_file, "rb") as f:
-            self.data = pickle.load(f)
+        self.data_path = path_index_file
 
     def get_info_sequence(self, identifier):
-        length = offset_head = offset = -1
-        found = False
         if identifier != '':
-            for i, dict in enumerate(self.data):
-                for j, sequence in enumerate(dict['sequences']):
+            with open(self.data_path, 'r') as index:
+                sequence = index.readline()
+                while sequence:
+                    length = offset_head = offset = -1
+                    found = False
+                        #for i, dict in enumerate(self.data):
+                            #for j, sequence in enumerate(dict['sequences']):
                     if identifier in sequence:
                         found = True
                         param_seq = sequence.split(' ')
