@@ -93,7 +93,7 @@ class FastaPartitioner:
                     dictio = dict['sequences']
                     dict_prev = results[i - 1]
                     seq_range_prev = dict_prev['sequences']
-                    if i > 0 and seq_range_prev and dictio and '>>' in dictio[
+                    if seq_range_prev and dictio and '>>' in dictio[
                         0]:  # If i > 0 and not empty the current and previous dictionary and the first sequence is split
                         param = dictio[0].split(' ')
                         seq_prev = seq_range_prev[-1]
