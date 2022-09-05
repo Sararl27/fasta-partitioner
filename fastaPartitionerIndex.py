@@ -167,28 +167,20 @@ class FunctionsFastaIndex:
     def get_info_sequence(self, identifier):
         if identifier != '':
             with open(self.data_path, 'r') as index:
+                length = offset_head = offset = -1
                 sequence = index.readline()
                 while sequence:
-                    length = offset_head = offset = -1
-                    found = False
-                        #for i, dict in enumerate(self.data):
-                            #for j, sequence in enumerate(dict['sequences']):
                     if identifier in sequence:
-                        found = True
                         param_seq = sequence.split(' ')
-                        split = int(param_seq[1])
-                        if split > 1:
-                            length = 0
-                            for x in range(i + 1, i + split):
-                                length += int(self.data[x]['sequences'][0].split(' ')[4])
-                            length += int(param_seq[4])
-                        else:
-                            length = int(param_seq[4])
-                        offset_head = int(param_seq[2])
-                        offset = int(param_seq[3])
+                        offset_head = int(param_seq[1])
+                        offset = int(param_seq[2])
+                        length = int(param_seq[3])
+                        next_seq = index.readline()
+                        while next_seq and identifier in next_seq:
+                            length += int(next_seq.split(' ')[3])
+                            next_seq = index.readline()
                         break
-                if found:
-                    break
+                    sequence = index.readline()
 
         return {'length': length, 'offset_head': offset_head, 'offset': offset}
 
@@ -200,6 +192,7 @@ class FunctionsFastaIndex:
             sequences.append(dict_seqs[index].split(' ')[0])
 
     def get_sequences_of_range(self, min_range, max_range):
+        # TODO recordar que se ha eliminado el parametro 'split' que estaba en la posición '1'
         sequences = []
         if min_range < max_range:
             i_min_range = -1
