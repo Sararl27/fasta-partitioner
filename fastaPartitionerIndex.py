@@ -211,8 +211,7 @@ class FunctionsFastaIndex:
     def get_sequences_of_range(self, min_range, max_range):
         sequences = []
         if min_range < max_range:
-            i_min_range = -1
-            i_max_range = -1
+            i_min_range = i_max_range = -1
             for i, dict in enumerate(self.data):
                 if dict['min_range'] == min_range and dict['max_range'] == max_range:  # If it is the default ranges
                     split = int(dict['sequences'][0].split(' ')[1])
