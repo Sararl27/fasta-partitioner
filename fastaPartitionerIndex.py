@@ -285,7 +285,7 @@ class FunctionsFastaIndex:
             else:   # 0 <= mid <= length
                 if mid != 0:
                     param = arr[mid - 1].split(' ')
-                    offset2 = int(param[3] if param[1] != '1' and mid == 0 else param[2])
+                    offset2 = int(param[2])
                     if offset2 < x < offset:
                         return mid if side == 'min' else mid - 1
                 if mid != length:
