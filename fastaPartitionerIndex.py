@@ -128,7 +128,7 @@ class FastaPartitioner:
     def __generate_fasta_index(self, key, workers):
         fexec = lithops.FunctionExecutor(max_workers=2000, runtime_memory=4096)  # log_level='DEBUG
 
-        # location = obj.split('//')[1].split('/')  # obj.split('/') #
+        # location = obj.split('//')[1].split('/')  # obj.split('/')
         # for_head = location[1:]
         # for_head = '/'.join(for_head)
         # data_bucket_name = location[0]
