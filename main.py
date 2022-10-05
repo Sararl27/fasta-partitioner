@@ -31,9 +31,9 @@ def generate_fasta_index_pyfaidx():
     print("Fasta index 'pyfaidx' done")
 
 
-def generate_fasta_index_own(local_input_path, data_bucket, prefix, key, workers):
+def generate_fasta_index_own(local_input_path, data_bucket, prefix, storage, key, workers):
     push_object_funct(local_input_path, data_bucket, prefix)
-    fp.FastaPartitioner(data_bucket, key, workers)
+    fp.FastaPartitioner(storage, data_bucket, key, workers)
 
 
 def test_partitioner_fasta():
@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
     # Execution
     generate_fasta_index_pyfaidx()
-    generate_fasta_index_own(local_input_path, data_bucket, prefix, key, workers)
+    generate_fasta_index_own(local_input_path, data_bucket, prefix, storage, key, workers)
 
     # run all tests with verbosity
     test_partitioner_fasta()
