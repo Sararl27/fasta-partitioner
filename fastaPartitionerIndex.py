@@ -1,4 +1,3 @@
-import pickle
 import os
 import pathlib
 import re
@@ -125,7 +124,6 @@ class FastaPartitioner:
                 for sequence in list_seq:
                     f.write(f'{sequence}\n')
 
-            #pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def __generate_fasta_index(self, key, workers):
         fexec = lithops.FunctionExecutor(max_workers=2000, runtime_memory=4096)  # log_level='DEBUG
