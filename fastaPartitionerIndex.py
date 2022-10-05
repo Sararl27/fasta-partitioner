@@ -6,8 +6,8 @@ import lithops
 
 class FastaPartitioner:
 
-    def __init__(self, storage, bucket, key, workers):
-        self.storage = storage
+    def __init__(self, bucket, key, workers):
+        self.storage = lithops.Storage()
         self.bucket = bucket
 
         self.__generate_fasta_index(key, workers)
