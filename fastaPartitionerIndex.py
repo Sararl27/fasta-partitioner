@@ -147,7 +147,6 @@ class FastaPartitioner:
         extra_args = {'chunk_size': chunk_size, 'obj_size': fasta['content-length'], 'partitions': workers}
         fexec.map_reduce(map_function=self.__generate_chunks, map_iterdata=map_iterdata, extra_args=extra_args,
                          reduce_function=self.__reduce_generate_chunks)
-        fexec.wait()
         results = fexec.get_result()
 
         self.__generate_index_file(results, f'{pathlib.Path(key).stem}')
