@@ -66,7 +66,8 @@ class FastaPartitioner:
                     if prev != -1:
                         self.__get_length(min_range, content, data, prev, start)
                     # name_id num_chunks_has_divided offset_head offset_bases
-                    content.append(f"{m.group().split(' ')[0].replace('>', '')} 1 {str(start)} {str(end)}")
+                    id = m.group().replace('\n', '').split(' ')[0].replace('>', '')
+                    content.append(f"{id} {str(start)} {str(end)}")
                 prev = end
 
              if len(heads) != 0 and len(ini_heads) != 0:
