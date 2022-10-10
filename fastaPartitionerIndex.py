@@ -114,7 +114,6 @@ class FastaPartitioner:
                         list_seq[0] = list_seq[0].replace(f' {param[3]}', f' {length}')  # [length_0-length_1|length] -> length
                         list_seq[0] = list_seq[0].replace(' <Y> ', f' {offset_head} ')  # Y --> offset_head
                         list_seq[0] = list_seq[0].replace('>> ', f'{name_id} ')  # '>>' -> name_id
-                        aux = 0
         return results
 
     def __generate_index_file(self, data, file_name):
