@@ -65,26 +65,27 @@ class FastaPartitioner:
                     if prev != -1:
                         self.__get_length(min_range, content, data, prev, start)
                     # name_id offset_head offset_bases
-                    content.append(f"{m.group().split(' ')[0].replace('>', '')} {str(start)} {str(end)}")
+                    id = m.group().replace('\n', '').split(' ')[0].replace('>', '')
+                    content.append(f"{id} {str(start)} {str(end)}")
                 prev = end
-
-            len_head = len(heads)
-            if ini_heads[-1].start() + 1 > heads[
-                -1].start():  # Check if the last head of the current one is cut. (ini_heads[-1].start() + 1): ignore '\n'
-                last_seq_start = ini_heads[-1].start() + min_range + 1  # (... + 1): ignore '\n'
-                if len_head != 0:  # Add length of bases to last sequence
-                    self.__get_length(min_range, content, data, prev, last_seq_start)
-                text = data[last_seq_start - min_range::]
-                # [<->|<_>]name_id_split offset_head
-                content.append(
-                    f"{'<-' if ' ' in text else '<_'}{text.split(' ')[0]} {str(last_seq_start)}")  # if '<->' there is all id
-            elif len_head != 0:  # Add length of bases to last sequence
-                self.__get_length(min_range, content, data, prev, max_range)
+            
+            if len(heads) != 0 and len(ini_heads) != 0:
+                if ini_heads[-1].start() + 1 > heads[
+                    -1].start():  # Check if the last head of the current one is cut. (ini_heads[-1].start() + 1): ignore '\n'
+                    last_seq_start = ini_heads[-1].start() + min_range + 1  # (... + 1): ignore '\n'
+                    self.__get_length(min_range, content, data, prev, last_seq_start) # Add length of bases to last sequence
+                    text = data[last_seq_start - min_range::]
+                    # [<->|<_>]name_id_split offset_head
+                    content.append(
+                        f"{'<-' if ' ' in text else '<_'}{text.split(' ')[0]} {str(last_seq_start)}")  # if '<->' there is all id
+                else:  # Add length of bases to last sequence
+                    self.__get_length(min_range, content, data, prev, max_range)
 
         return content
 
     def __reduce_generate_chunks(self, results):
         if len(results) > 1:
+            results = list(filter(None, results))
             for i, list_seq in enumerate(results):
                 if i > 0:
                     list_prev = results[i - 1]
@@ -113,6 +114,7 @@ class FastaPartitioner:
                         list_seq[0] = list_seq[0].replace(f' {param[3]}', f' {length}')  # [length_0-length_1|length] -> length
                         list_seq[0] = list_seq[0].replace(' <Y> ', f' {offset_head} ')  # Y --> offset_head
                         list_seq[0] = list_seq[0].replace('>> ', f'{name_id} ')  # '>>' -> name_id
+                        aux = 0
         return results
 
     def __generate_index_file(self, data, file_name):
