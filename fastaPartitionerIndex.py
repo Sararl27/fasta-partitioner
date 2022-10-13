@@ -69,17 +69,16 @@ class FastaPartitioner:
                     content.append(f"{id} {str(start)} {str(end)}")
                 prev = end
             
-            if len(heads) != 0 and len(ini_heads) != 0:
-                if ini_heads[-1].start() + 1 > heads[
-                    -1].start():  # Check if the last head of the current one is cut. (ini_heads[-1].start() + 1): ignore '\n'
-                    last_seq_start = ini_heads[-1].start() + min_range + 1  # (... + 1): ignore '\n'
-                    self.__get_length(min_range, content, data, prev, last_seq_start) # Add length of bases to last sequence
-                    text = data[last_seq_start - min_range::]
-                    # [<->|<_>]name_id_split offset_head
-                    content.append(
-                        f"{'<-' if ' ' in text else '<_'}{text.split(' ')[0]} {str(last_seq_start)}")  # if '<->' there is all id
-                else:  # Add length of bases to last sequence
-                    self.__get_length(min_range, content, data, prev, max_range)
+            if len(heads) != 0 and len(ini_heads) != 0 and ini_heads[-1].start() + 1 > heads[
+                -1].start():  # Check if the last head of the current one is cut. (ini_heads[-1].start() + 1): ignore '\n'
+                last_seq_start = ini_heads[-1].start() + min_range + 1  # (... + 1): ignore '\n'
+                self.__get_length(min_range, content, data, prev, last_seq_start) # Add length of bases to last sequence
+                text = data[last_seq_start - min_range::]
+                # [<->|<_>]name_id_split offset_head
+                content.append(
+                    f"{'<-' if ' ' in text else '<_'}{text.split(' ')[0]} {str(last_seq_start)}")  # if '<->' there is all id
+            else:  # Add length of bases to last sequence
+                self.__get_length(min_range, content, data, prev, max_range)
 
         return content
 
