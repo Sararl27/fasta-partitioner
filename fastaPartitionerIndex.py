@@ -46,7 +46,7 @@ class FastaPartitioner:
                         # (start-1): avoid having a split sequence in the index that only has '\n'
                         match_text = list(re.finditer('.*\n', data[0:m.start()]))
                         if match_text:
-                            text = match_text[0].group().split(' ')[0]
+                            text = match_text[0].group().split(' ')[0].replace('\n', '')
                             length_0 = len(data[match_text[0].start():m.start()].replace('\n', ''))
                             offset_0 = match_text[0].start() + min_range
                             if len(match_text) > 1:
