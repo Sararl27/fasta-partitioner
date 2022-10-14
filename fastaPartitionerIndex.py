@@ -118,8 +118,6 @@ class FastaPartitioner:
                             list_seq[0] = list_prev[-1].replace(f' {param_seq_prev[3]}',
                                                               f' {int(param_seq_prev[3]) + int(param[1])}')  # [length_0-length_1|length] -> length
                             list_prev.pop()
-
-
         return results
 
     def __generate_index_file(self, data, file_name):
