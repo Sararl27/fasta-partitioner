@@ -158,7 +158,6 @@ class FastaPartitioner:
 
         self.__generate_index_file(results, f'{pathlib.Path(key).stem}')
 
-        # fexec.plot()
         fexec.clean()
 
         print('... Done, generated index')
