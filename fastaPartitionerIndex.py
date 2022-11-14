@@ -190,12 +190,12 @@ class FunctionsFastaIndex:
     def get_sequences_of_range(self, min_range, max_range):
         sequences = []
         with open(self.data_path, 'r') as index:
-            sequence = index.readline()
+            sequence = index.readline().replace('\n', '')
             while sequence and int(sequence.split(' ')[2]) < min_range:
-                sequence = index.readline()
+                sequence = index.readline().replace('\n', '')
 
             while sequence and int(sequence.split(' ')[2]) < max_range:
                 sequences.append(sequence)
-                sequence = index.readline()
+                sequence = index.readline().replace('\n', '')
         return sequences
 

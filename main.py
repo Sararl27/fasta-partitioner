@@ -61,4 +61,19 @@ if __name__ == "__main__":
     #generate_fasta_index_own(local_input_path, data_bucket, prefix, storage, key, workers)
 
     # run all tests with verbosity
-    test_partitioner_fasta()
+    # test_partitioner_fasta()
+
+    path_data_file = './output_data/genes_index.fai'
+    functions = fp.FunctionsFastaIndex(path_data_file)
+
+    list = [[0, 100], [100, 500]]
+    results = []
+    for i in list:
+        sequences = functions.get_sequences_of_range(i[0], i[1])
+        if sequences:
+            seq = sequences[0]  +'  -  ' + sequences[-1]
+            results.append(f"{i[0]}-{i[1]}: {seq}")
+        else:
+            results.append("Null")
+
+    print(results)

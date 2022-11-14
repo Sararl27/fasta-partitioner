@@ -36,8 +36,11 @@ class TestPartitionOptions(unittest.TestCase):
         list = [[9643, 36109], [60411, 70827], [113494, 120950], [473060, 717220], [949179, 957690]]
         for i in list:
             sequences = self.functions.get_sequences_of_range(i[0], i[1])
-            seq = sequences[0].replace('\n','') + '\t\t-\t\t' + sequences[-1].replace('\n','')
-            results.append(f"{i[0]}-{i[1]}: {seq}")
+            if sequences:
+                seq = sequences[0].replace('\n','') + '\t\t-\t\t' + sequences[-1].replace('\n','')
+                results.append(f"{i[0]}-{i[1]}: {seq}")
+            else:
+                results.append("Null")
 
     def test_index_generated(self):
         with open(self.functions.data_path, 'r') as index:
