@@ -54,11 +54,14 @@ if __name__ == "__main__":
     key = f'fasta/genes.fasta'  # Change me
     obj = f'{data_bucket}/{key}'  # f'cos://{data_bucket}/{key}'  # Change me
 
-    workers = 1000  # Change me
+    workers = 2  # Change me
 
     # Execution
     # generate_fasta_index_pyfaidx()
-    #generate_fasta_index_own(local_input_path, data_bucket, prefix, storage, key, workers)
+    # generate_fasta_index_own(local_input_path, data_bucket, prefix, storage, key, workers)
 
     # run all tests with verbosity
-    test_partitioner_fasta()
+    #test_partitioner_fasta()
+    path_data_file = './output_data/genes_index.fai'
+    aux = fp.FunctionsFastaIndex(path_data_file)
+    print(aux.generate_alignment_iterdata(workers, data_bucket, key))

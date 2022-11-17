@@ -2,6 +2,7 @@ import os
 import pathlib
 import re
 import lithops
+from lithops import Storage
 
 
 class FastaPartitioner:
@@ -79,13 +80,14 @@ class FastaPartitioner:
                     f"{'<-' if ' ' in text else '<_'}{text.split(' ')[0]} {str(last_seq_start)}")  # if '<->' there is all id
             else:  # Add length of bases to last sequence
                 self.__get_length(min_range, content, data, prev, max_range, id)
-        elif data:
-            length = len(data.replace('\n', ''))
-            content.append(f"<_-_> {min_range} {length} {id}")
+        # elif data:
+        #    length = len(data.replace('\n', ''))
+        #    content.append(f"<_-_> {min_range} {length} {id}")
         return content
 
     def __reduce_generate_chunks(self, results):
         if len(results) > 1:
+            results = list(filter(None, results))
             # results = list(filter(None, results))
             for i, list_seq in enumerate(results):
                 if i > 0:
@@ -104,22 +106,23 @@ class FastaPartitioner:
                                 offset_head = param_seq_prev[1]
                                 offset_base = param[2].split('-')[1]
                                 list_prev.pop()  # Remove previous sequence
+                                # else:
+                                #    length = param[3].split('-')[0]
+                                #    name_id = param_seq_prev[0]
+                                #    offset_head = param_seq_prev[1]
+                                #    offset_base = param[2].split('-')[0]
+                                list_seq[0] = list_seq[0].replace(f' {param[5]}', '')  # Remove 5rt param
+                                list_seq[0] = list_seq[0].replace(f' {param[2]} ',
+                                                                  f' {offset_base} ')  # [offset_base_0-offset_base_1|offset_base] -> offset_base
+                                list_seq[0] = list_seq[0].replace(f' {param[3]} ',
+                                                                  f' {length} ')  # [length_0-length_1|length] -> length
+                                list_seq[0] = list_seq[0].replace(' <Y> ', f' {offset_head} ')  # Y --> offset_head
+                                list_seq[0] = list_seq[0].replace('>> ', f'{name_id} ')  # '>>' -> name_id
                             else:
-                                length = param[3].split('-')[0]
-                                name_id = param_seq_prev[0]
-                                offset_head = param_seq_prev[1]
-                                offset_base = param[2].split('-')[0]
-                            list_seq[0] = list_seq[0].replace(f' {param[5]}', '')  # Remove 5rt param
-                            list_seq[0] = list_seq[0].replace(f' {param[2]} ',
-                                                              f' {offset_base} ')  # [offset_base_0-offset_base_1|offset_base] -> offset_base
-                            list_seq[0] = list_seq[0].replace(f' {param[3]} ',
-                                                              f' {length} ')  # [length_0-length_1|length] -> length
-                            list_seq[0] = list_seq[0].replace(' <Y> ', f' {offset_head} ')  # Y --> offset_head
-                            list_seq[0] = list_seq[0].replace('>> ', f'{name_id} ')  # '>>' -> name_id
-                        elif '<_-_>' in list_seq[0]:
-                            list_seq[0] = list_seq[0].replace(f'<_-_> ',
-                                                              f'{param_seq_prev[0]} {param_seq_prev[1]} ')
-            results = list(filter(None, results))
+                                list_seq.pop(0)
+                        # elif '<_-_>' in list_seq[0]:
+                        #    list_seq[0] = list_seq[0].replace(f'<_-_> ', f'{param_seq_prev[0]} {param_seq_prev[1]} ')
+            # results = list(filter(None, results)), if we the previous commented condition
         return results
 
     def __generate_index_file(self, data, file_name):
@@ -130,7 +133,6 @@ class FastaPartitioner:
             for list_seq in data:
                 for sequence in list_seq:
                     f.write(f'{sequence}\n')
-
 
     def __generate_fasta_index(self, key, workers):
         fexec = lithops.FunctionExecutor(max_workers=2000, runtime_memory=4096)  # log_level='DEBUG
@@ -199,3 +201,73 @@ class FunctionsFastaIndex:
                 sequence = index.readline()
         return sequences
 
+    def __generate_info_seq(self, bucket, storage, fasta_file_path, values, prev_values, last_data, max_range):
+        if prev_values[2] != last_data:
+            if max_range <= int(values[1]) - 1:
+                last_byte_plus = max_range - 1
+            else: # If the next sequence is outside the chunk range
+                last_byte_plus = int(values[1]) - 1
+        else:
+            last_byte_plus = int(storage.head_object(bucket, fasta_file_path)['content-length']) - 1
+
+        return last_byte_plus
+
+    # def generate_alignment_iterdata(self, args: Arguments, list_fastq: list, fasta_index: str, fasta_file_path, iterdata_n):
+    def generate_alignment_iterdata(self, fasta_workers, bucket, fasta_file_path):
+        """
+        Creates the lithops iterdata from the fasta and fastq chunk lists
+        """
+        storage = Storage()
+        # Number of fastq chunks processed. If doing a partial execution, iterdata_n will need to be multiple of the number of fasta chunks
+        # so the index correction is done properly.
+
+
+        fasta_chunks = []
+        try:
+            fasta = storage.head_object(bucket, fasta_file_path)
+            fa_chunk_size = int(int(fasta['content-length']) / fasta_workers)
+            with open(self.data_path, 'r') as index:
+                data_index = list(filter(None, index.read().split('\n')))
+            size_data = len(data_index)
+            # prev_seq = data_index[0].split(' ')
+            j = 0
+            min = fa_chunk_size * j
+            max = fa_chunk_size * (j + 1)
+            total_size = int(fasta['content-length'])
+            # offset_head = int(last_seq[1])
+            i = 0
+            while max <= total_size:
+                # Si el min está en el head
+                # Si el min esta en la base o mas
+                if int(data_index[i].split(' ')[1]) <= min < int(data_index[i].split(' ')[2]):   # In the head
+                    fa_chunk = {'offset_head': int(data_index[i].split(' ')[1]), 'offset_base': int(data_index[i].split(' ')[2])}
+                elif i == size_data - 1 or min < int(data_index[i + 1].split(' ')[1]):  # In the base
+                    fa_chunk = {'offset_head': int(data_index[i].split(' ')[1]), 'offset_base': min}
+                elif i < size_data:
+                    i += 1
+                    while i + 1 < size_data and min > int(data_index[i + 1].split(' ')[1]):
+                        i += 1
+                    if min < int(data_index[i].split(' ')[2]):
+                        fa_chunk = {'offset_head': int(data_index[i].split(' ')[1]), 'offset_base': int(data_index[i].split(' ')[2])}
+                    else:
+                        fa_chunk = {'offset_head': int(data_index[i].split(' ')[1]), 'offset_base': min}
+
+                if i == size_data - 1 or max < int(data_index[i+1].split(' ')[1]):
+                    fa_chunk['last_byte+'] = max - 1 if fa_chunk_size * (j + 2) <= total_size else total_size - 1
+                else:
+                    if max < int(data_index[i+1].split(' ')[2]):  # Split in the middle of head
+                        fa_chunk['last_byte+'] = int(data_index[i+1].split(' ')[1]) - 1
+                        i += 1
+                    elif i < size_data:
+                        i += 1
+                        while i + 1 < size_data and max > int(data_index[i + 1].split(' ')[1]):
+                            i += 1
+                        fa_chunk['last_byte+'] = max - 1
+                fasta_chunks.append(fa_chunk)
+                j += 1
+                min = fa_chunk_size * j
+                max = fa_chunk_size * (j + 1)
+        except Exception as e:
+            print(e)
+
+        return fasta_chunks
