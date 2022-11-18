@@ -13,13 +13,13 @@ class FastaPartitioner:
 
         self.__generate_fasta_index(key, workers)
 
-    def __get_length(self, min_range, content, data, start_base, end_base, id):
+    def __get_length(self, min_range, content, data, start_base, end_base):
         start_base -= min_range
         end_base -= min_range
         len_base = len(data[start_base:end_base].replace('\n', ''))
         # name_id offset_head offset_bases ->
-        # name_id offset_head offset_bases len_bases id
-        content[-1] = f'{content[-1]} {len_base} {str(id)}'
+        # name_id offset_head offset_bases len_bases
+        content[-1] = f'{content[-1]} {len_base}'
 
     # Generate metadata from fasta file
     def __generate_chunks(self, id, key, chunk_size, obj_size, partitions):
@@ -57,13 +57,13 @@ class FastaPartitioner:
                                 length_base = f"{length_0}"
                                 offset = f'{offset_0}'
                             # >> offset_head offset_bases_split length/s first_line_before_space_or_\n
-                            content.append(f">> <Y> {str(offset)} {length_base} {str(id)} ^{text}^")  # Split sequences
+                            content.append(f">> <Y> {str(offset)} {length_base} ^{text}^")  # Split sequences
                         else:  # When the first header found is false, when in a split stream there is a split header that has a '>' inside (ex: >tr|...o-alpha-(1->5)-L-e...\n)
                             first_sequence = True
                             start = end = -1  # Avoid entering the following condition
                 if prev != start:  # When if the current sequence base is not empty
                     if prev != -1:
-                        self.__get_length(min_range, content, data, prev, start, id)
+                        self.__get_length(min_range, content, data, prev, start)
                     # name_id offset_head offset_bases
                     id_name = m.group().replace('\n', '').split(' ')[0].replace('>', '')
                     content.append(f"{id_name} {str(start)} {str(end)}")
@@ -72,17 +72,13 @@ class FastaPartitioner:
             if len(heads) != 0 and len(ini_heads) != 0 and ini_heads[-1].start() + 1 > heads[
                 -1].start():  # Check if the last head of the current one is cut. (ini_heads[-1].start() + 1): ignore '\n'
                 last_seq_start = ini_heads[-1].start() + min_range + 1  # (... + 1): ignore '\n'
-                self.__get_length(min_range, content, data, prev, last_seq_start,
-                                  id)  # Add length of bases to last sequence
+                self.__get_length(min_range, content, data, prev, last_seq_start)  # Add length of bases to last sequence
                 text = data[last_seq_start - min_range::]
                 # [<->|<_>]name_id_split offset_head
                 content.append(
                     f"{'<-' if ' ' in text else '<_'}{text.split(' ')[0]} {str(last_seq_start)}")  # if '<->' there is all id
             else:  # Add length of bases to last sequence
-                self.__get_length(min_range, content, data, prev, max_range, id)
-        # elif data:
-        #    length = len(data.replace('\n', ''))
-        #    content.append(f"<_-_> {min_range} {length} {id}")
+                self.__get_length(min_range, content, data, prev, max_range)
         return content
 
     def __reduce_generate_chunks(self, results):
@@ -101,17 +97,12 @@ class FastaPartitioner:
                                 if '<->' in list_prev[-1]:  # If the split was after a space, then there is all id
                                     name_id = param_seq_prev[0].replace('<->', '')
                                 else:
-                                    name_id = param_seq_prev[0].replace('<_>', '') + param[5].replace('^', '')
+                                    name_id = param_seq_prev[0].replace('<_>', '') + param[4].replace('^', '')
                                 length = param[3].split('-')[1]
                                 offset_head = param_seq_prev[1]
                                 offset_base = param[2].split('-')[1]
                                 list_prev.pop()  # Remove previous sequence
-                                # else:
-                                #    length = param[3].split('-')[0]
-                                #    name_id = param_seq_prev[0]
-                                #    offset_head = param_seq_prev[1]
-                                #    offset_base = param[2].split('-')[0]
-                                list_seq[0] = list_seq[0].replace(f' {param[5]}', '')  # Remove 5rt param
+                                list_seq[0] = list_seq[0].replace(f' {param[4]}', '')  # Remove 5rt param
                                 list_seq[0] = list_seq[0].replace(f' {param[2]} ',
                                                                   f' {offset_base} ')  # [offset_base_0-offset_base_1|offset_base] -> offset_base
                                 list_seq[0] = list_seq[0].replace(f' {param[3]} ',
@@ -120,9 +111,6 @@ class FastaPartitioner:
                                 list_seq[0] = list_seq[0].replace('>> ', f'{name_id} ')  # '>>' -> name_id
                             else:
                                 list_seq.pop(0)
-                        # elif '<_-_>' in list_seq[0]:
-                        #    list_seq[0] = list_seq[0].replace(f'<_-_> ', f'{param_seq_prev[0]} {param_seq_prev[1]} ')
-            # results = list(filter(None, results)), if we the previous commented condition
         return results
 
     def __generate_index_file(self, data, file_name):
@@ -201,17 +189,6 @@ class FunctionsFastaIndex:
                 sequence = index.readline()
         return sequences
 
-    def __generate_info_seq(self, bucket, storage, fasta_file_path, values, prev_values, last_data, max_range):
-        if prev_values[2] != last_data:
-            if max_range <= int(values[1]) - 1:
-                last_byte_plus = max_range - 1
-            else: # If the next sequence is outside the chunk range
-                last_byte_plus = int(values[1]) - 1
-        else:
-            last_byte_plus = int(storage.head_object(bucket, fasta_file_path)['content-length']) - 1
-
-        return last_byte_plus
-
     # def generate_alignment_iterdata(self, args: Arguments, list_fastq: list, fasta_index: str, fasta_file_path, iterdata_n):
     def generate_alignment_iterdata(self, fasta_workers, bucket, fasta_file_path):
         """
@@ -225,7 +202,8 @@ class FunctionsFastaIndex:
         fasta_chunks = []
         try:
             fasta = storage.head_object(bucket, fasta_file_path)
-            fa_chunk_size = int(int(fasta['content-length']) / fasta_workers)
+            total_size = int(fasta['content-length'])
+            fa_chunk_size = int(total_size / fasta_workers)
             with open(self.data_path, 'r') as index:
                 data_index = list(filter(None, index.read().split('\n')))
             size_data = len(data_index)
@@ -233,7 +211,6 @@ class FunctionsFastaIndex:
             j = 0
             min = fa_chunk_size * j
             max = fa_chunk_size * (j + 1)
-            total_size = int(fasta['content-length'])
             # offset_head = int(last_seq[1])
             i = 0
             while max <= total_size:
